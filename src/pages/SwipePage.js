@@ -70,8 +70,14 @@ const SwipePage = () => {
           alt={user.name}
           className="w-32 h-32 rounded-full mx-auto mb-4"
         />
-        <h2 className="text-xl font-bold">{user.name}</h2>
-        <p className="text-sm text-gray-600">{user.email}</p>
+        <div className="flex flex-col items-center">
+  <h2 className="text-xl font-bold flex items-center gap-2">
+    {user.name}{user.premium &&  ( <span className="text-xs bg-yellow-300 px-2 py-1 rounded-full">Premium</span>
+    )}
+  </h2>
+  <p className="text-sm text-gray-600">{user.email}</p>
+</div>
+
         <div className="mt-6 flex justify-around">
           <button
             onClick={() => handleSwipe(false)}
