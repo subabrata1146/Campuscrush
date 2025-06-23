@@ -68,6 +68,10 @@ const Profile = () => {
             className="w-28 h-28 mx-auto rounded-full mb-4"
           />
         )}
+<p className="text-sm mt-4 text-center">
+  Share this referral code with friends: <br />
+  <span className="font-mono text-pink-600">{auth.currentUser.uid}</span>
+</p>
 
         <label className="block mb-2">Upload Profile Photo:</label>
         <input type="file" onChange={(e) => setPhoto(e.target.files[0])} className="mb-4" />
