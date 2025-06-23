@@ -6,6 +6,8 @@ import Register from "./pages/Register";
 import SwipePage from "./pages/SwipePage";
 import Profile from "./pages/Profile";
 import Chat from "./pages/Chat";
+import CoinShop from "./pages/CoinShop";
+import BuyPremium from "./pages/BuyPremium";
 
 function App() {
   return (
@@ -16,6 +18,10 @@ function App() {
         <Route path="/register" element={<Register />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/chat" element={<Chat />} />
+  
+  <Route path="/coin-shop" element={<CoinShop />} />
+  <Route path="/buy-premium" element={<BuyPremium />} />
+</Routes>
       </Routes>
     </Router>
   );
