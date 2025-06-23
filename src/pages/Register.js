@@ -60,6 +60,8 @@ const Register = () => {
         <button type="submit" className="bg-pink-500 text-white py-2 rounded hover:bg-pink-600">
           Register
         </button>
+            <input type="text"
+  placeholder="Referral code (optional)" className="mb-4 p-2 border rounded"onChange={(e) => setReferralCode(e.target.value)}/>
         <p
           onClick={() => navigate("/login")}
           className="text-sm text-blue-500 mt-4 cursor-pointer"
