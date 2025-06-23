@@ -60,6 +60,15 @@ const Profile = () => {
     <div className="min-h-screen flex flex-col items-center justify-center bg-pink-50">
       <div className="bg-white p-6 rounded-xl w-96 shadow-lg">
         <h2 className="text-xl font-bold mb-4 text-center">Your Profile</h2>
+  {userData?.premium ? (
+  <p className="text-green-600 font-semibold text-center mb-4">
+    ✅ You are a Premium Member
+  </p>
+) : (
+  <p className="text-red-500 font-semibold text-center mb-4">
+    ❌ You are not a Premium Member
+  </p>
+)}
 
         {userData?.photoURL && (
           <img
