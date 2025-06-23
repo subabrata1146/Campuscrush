@@ -26,6 +26,9 @@ const Register = () => {
         swipes: [],
         matches: []
       });
+      if (referralCode) {
+  await updateReferral(referralCode, userCred.user.uid);
+      }
       navigate("/login");
     } catch (err) {
       alert("Registration failed: " + err.message);
