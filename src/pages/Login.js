@@ -1,55 +1,41 @@
-// src/pages/Login.js
-import React, { useState } from "react";
-import { signInWithEmailAndPassword } from "firebase/auth";
-import { auth } from "../../firebase/firebaseConfig";
-import { useNavigate } from "react-router-dom";
+import React, { useState } from 'react';
+import { auth } from '../firebase/firebaseConfig';
+import { signInWithEmailAndPassword, signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
+import { useNavigate } from 'react-router-dom';
 
-const Login = () => {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+export default function Login() {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const provider = new GoogleAuthProvider();
   const navigate = useNavigate();
 
-  const handleLogin = async (e) => {
-    e.preventDefault();
+  const handleLogin = async () => {
     try {
       await signInWithEmailAndPassword(auth, email, password);
-      navigate("/");
-    } catch (err) {
-      alert("Login failed: " + err.message);
+      alert("Logged in successfully");
+      navigate('/');
+    } catch (error) {
+      alert(error.message);
+    }
+  };
+
+  const handleGoogleLogin = async () => {
+    try {
+      await signInWithPopup(auth, provider);
+      alert("Google Login successful");
+      navigate('/');
+    } catch (error) {
+      alert(error.message);
     }
   };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-pink-100">
-      <h2 className="text-3xl font-bold mb-6">CampusCrush Login</h2>
-      <form onSubmit={handleLogin} className="flex flex-col w-80 bg-white p-6 rounded-xl shadow-md">
-        <input
-          type="email"
-          placeholder="Email"
-          className="mb-4 p-2 border rounded"
-          onChange={(e) => setEmail(e.target.value)}
-          required
-        />
-        <input
-          type="password"
-          placeholder="Password"
-          className="mb-4 p-2 border rounded"
-          onChange={(e) => setPassword(e.target.value)}
-          required
-        />
-        <button type="submit" className="bg-pink-500 text-white py-2 rounded hover:bg-pink-600">
-          Login
-        </button>
-        <p
-          onClick={() => navigate("/register")}
-          className="text-sm text-blue-500 mt-4 cursor-pointer"
-        >
-          Don't have an account? Register
-        </p>
-      </form>
+    <div className="flex flex-col items-center justify-center h-screen">
+      <h2 className="text-2xl mb-4">Login</h2>
+      <input className="mb-2 p-2 border" placeholder="Email" onChange={e => setEmail(e.target.value)} />
+      <input className="mb-2 p-2 border" type="password" placeholder="Password" onChange={e => setPassword(e.target.value)} />
+      <button className="bg-green-500 text-white px-4 py-2 rounded mb-2" onClick={handleLogin}>Login</button>
+      <button className="bg-red-500 text-white px-4 py-2 rounded" onClick={handleGoogleLogin}>Login with Google</button>
     </div>
   );
-};
-
-export default Login;
-
+}
