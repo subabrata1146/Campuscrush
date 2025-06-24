@@ -10,6 +10,8 @@ import CoinShop from "./pages/CoinShop";
 import BuyPremium from "./pages/BuyPremium";
 import CompatibilityQuiz from "./pages/CompatibilityQuiz";
 
+
+
 function App() {
   return (
     <Router>
