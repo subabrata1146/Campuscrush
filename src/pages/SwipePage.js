@@ -32,11 +32,11 @@ export default function SwipePage() {
       const data = currentUserDoc.data();
       setCurrentUserData(data);
 
-      if (!data || !data.verified) {
-        alert("Please complete ID and selfie verification to use swipe features.");
-        navigate('/profile');
-        return;
-      }
+     if (!currentUserData?.verification?.verified) {
+      alert("Please complete ID and selfie verification to use swipe features.");
+      navigate('/verify');
+      return;
+    }
 
       const lookingFor = data?.lookingFor || 'Any';
       const seen = data?.seenUsers || [];
