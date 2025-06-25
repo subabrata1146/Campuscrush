@@ -1,6 +1,6 @@
 // src/pages/Profile.js
 import React, { useEffect, useState } from "react";
-import { auth, db, storage } from "../../firebase/firebaseConfig";
+import { auth, db, storage } from "../firebase/firebaseConfig";
 import {
   doc,
   getDoc,
