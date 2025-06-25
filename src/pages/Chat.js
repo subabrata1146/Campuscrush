@@ -25,41 +25,53 @@ export default function Chat() {
 
   useEffect(() => {
     const fetchMatches = async () => {
-      const likesRef = collection(db, 'likes');
-      const q = query(likesRef, where('from', '==', currentUser.uid));
+     const currentUser = auth.currentUser;
+    if (!currentUser) return;
 
-      const unsub = onSnapshot(q, async snapshot => {
-        const matchUids = [];
+    const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
+    const userData = userDoc.data();
 
-        const promises = snapshot.docs.map(doc1 => {
-          const toUser = doc1.data().to;
-          const reverseQ = query(
-            likesRef,
-            where('from', '==', toUser),
-            where('to', '==', currentUser.uid)
-          );
+    // ✅ Restriction for unverified users
+    if (!userData?.verification?.verified) {
+      alert("Please complete student ID and selfie verification to access chat.");
+      return;
+    }
 
-          return new Promise(resolve => {
-            onSnapshot(reverseQ, reverseSnap => {
-              reverseSnap.forEach(doc2 => {
-                if (doc2.exists()) {
-                  matchUids.push(toUser);
-                }
-              });
-              resolve();
+    const likesRef = collection(db, 'likes');
+    const q = query(likesRef, where('from', '==', currentUser.uid));
+
+    const unsub = onSnapshot(q, async snapshot => {
+      const matchUids = [];
+
+      const promises = snapshot.docs.map(doc1 => {
+        const toUser = doc1.data().to;
+        const reverseQ = query(
+          likesRef,
+          where('from', '==', toUser),
+          where('to', '==', currentUser.uid)
+        );
+
+        return new Promise(resolve => {
+          onSnapshot(reverseQ, reverseSnap => {
+            reverseSnap.forEach(doc2 => {
+              if (doc2.exists()) {
+                matchUids.push(toUser);
+              }
             });
+            resolve();
           });
         });
-
-        await Promise.all(promises);
-        setMatchedUsers([...new Set(matchUids)]);
       });
 
-      return () => unsub();
-    };
+      await Promise.all(promises);
+      setMatchedUsers([...new Set(matchUids)]);
+    });
 
-    fetchMatches();
-  }, []);
+    return () => unsub();
+  };
+
+  fetchMatches();
+}, []);
 
   useEffect(() => {
     if (!selectedChat) return;
