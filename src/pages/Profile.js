@@ -1,109 +1,98 @@
 // src/pages/Profile.js
-import React, { useEffect, useState } from "react";
-import { auth, db, storage } from "../firebase/firebaseConfig";
-import {
-  doc,
-  getDoc,
-  updateDoc
-} from "firebase/firestore";
-import {
-  ref,
-  uploadBytes,
-  getDownloadURL
-} from "firebase/storage";
-import { useNavigate } from "react-router-dom";
+import React, { useState } from 'react';
+import { db, auth, storage } from '../firebase/firebaseConfig';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { doc, setDoc } from 'firebase/firestore';
+import { useNavigate } from 'react-router-dom';
 
-const Profile = () => {
-  const [userData, setUserData] = useState(null);
+export default function Profile() {
+  const [name, setName] = useState('');
+  const [gender, setGender] = useState('');
+  const [lookingFor, setLookingFor] = useState('');
   const [photo, setPhoto] = useState(null);
-  const [idDoc, setIdDoc] = useState(null);
   const navigate = useNavigate();
 
-  const fetchUserData = async () => {
-    const user = auth.currentUser;
-    if (!user) return;
-    const userRef = doc(db, "users", user.uid);
-    const snap = await getDoc(userRef);
-    if (snap.exists()) {
-      setUserData(snap.data());
-    }
-  };
-
-  const uploadImage = async (file, path) => {
-    const storageRef = ref(storage, `${path}/${auth.currentUser.uid}`);
-    await uploadBytes(storageRef, file);
-    return await getDownloadURL(storageRef);
-  };
-
-  const handleUpdate = async () => {
-    const userRef = doc(db, "users", auth.currentUser.uid);
-    let updates = {};
-    if (photo) {
-      const photoURL = await uploadImage(photo, "profilePhotos");
-      updates.photoURL = photoURL;
-    }
-    if (idDoc) {
-      const idURL = await uploadImage(idDoc, "ids");
-      updates.idVerification = idURL;
+  const handleSubmit = async () => {
+    if (!name || !gender || !lookingFor || !photo) {
+      alert("Please fill all fields.");
+      return;
     }
 
-    await updateDoc(userRef, updates);
-    alert("Profile updated!");
-    fetchUserData();
-  };
+    try {
+      const user = auth.currentUser;
+      if (!user) {
+        alert("User not logged in.");
+        return;
+      }
 
-  useEffect(() => {
-    fetchUserData();
-  }, []);
+      const storageRef = ref(storage, `profilePics/${user.uid}`);
+      await uploadBytes(storageRef, photo);
+      const photoURL = await getDownloadURL(storageRef);
+
+      await setDoc(doc(db, 'users', user.uid), {
+        uid: user.uid,
+        name,
+        gender,
+        lookingFor,
+        photoURL,
+        email: user.email,
+        createdAt: new Date()
+      });
+
+      alert("Profile saved successfully!");
+      navigate('/'); // redirect to swipe page
+    } catch (error) {
+      console.error(error);
+      alert("Error saving profile.");
+    }
+  };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-pink-50">
-      <div className="bg-white p-6 rounded-xl w-96 shadow-lg">
-        <h2 className="text-xl font-bold mb-4 text-center">Your Profile</h2>
-  {userData?.premium ? (
-  <p className="text-green-600 font-semibold text-center mb-4">
-    ✅ You are a Premium Member
-  </p>
-) : (
-  <p className="text-red-500 font-semibold text-center mb-4">
-    ❌ You are not a Premium Member
-  </p>
-)}
+    <div className="flex flex-col items-center justify-center min-h-screen p-4 bg-gray-100">
+      <h2 className="text-2xl font-semibold mb-4">Complete Your Profile</h2>
 
-        {userData?.photoURL && (
-          <img
-            src={userData.photoURL}
-            alt="Profile"
-            className="w-28 h-28 mx-auto rounded-full mb-4"
-          />
-        )}
-<p className="text-sm mt-4 text-center">
-  Share this referral code with friends: <br />
-  <span className="font-mono text-pink-600">{auth.currentUser.uid}</span>
-</p>
+      <input
+        className="p-2 mb-3 w-full max-w-sm border rounded"
+        type="text"
+        placeholder="Your Name"
+        onChange={e => setName(e.target.value)}
+      />
 
-        <label className="block mb-2">Upload Profile Photo:</label>
-        <input type="file" onChange={(e) => setPhoto(e.target.files[0])} className="mb-4" />
+      <select
+        className="p-2 mb-3 w-full max-w-sm border rounded"
+        onChange={e => setGender(e.target.value)}
+        value={gender}
+      >
+        <option value="">Select Gender</option>
+        <option>Male</option>
+        <option>Female</option>
+        <option>Other</option>
+      </select>
 
-        <label className="block mb-2">Upload Student ID:</label>
-        <input type="file" onChange={(e) => setIdDoc(e.target.files[0])} className="mb-4" />
+      <select
+        className="p-2 mb-3 w-full max-w-sm border rounded"
+        onChange={e => setLookingFor(e.target.value)}
+        value={lookingFor}
+      >
+        <option value="">Looking For</option>
+        <option>Male</option>
+        <option>Female</option>
+        <option>Any</option>
+      </select>
 
-        <button
-          onClick={handleUpdate}
-          className="bg-pink-500 text-white px-4 py-2 rounded hover:bg-pink-600 w-full"
-        >
-          Update Profile
-        </button>
+      <input
+        className="p-2 mb-3 w-full max-w-sm border rounded"
+        type="file"
+        accept="image/*"
+        onChange={e => setPhoto(e.target.files[0])}
+      />
 
-        <button
-          onClick={() => navigate("/")}
-          className="mt-4 text-blue-500 text-sm underline"
-        >
-          Back to Swiping
-        </button>
-      </div>
+      <button
+        onClick={handleSubmit}
+        className="bg-pink-500 hover:bg-pink-600 text-white px-4 py-2 rounded"
+      >
+        Save Profile
+      </button>
     </div>
   );
-};
-
-export default Profile;
+}
