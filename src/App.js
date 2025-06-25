@@ -9,8 +9,7 @@ import Chat from "./pages/Chat";
 import CoinShop from "./pages/CoinShop";
 import BuyPremium from "./pages/BuyPremium";
 import CompatibilityQuiz from "./pages/CompatibilityQuiz";
-
-
+import CoinShop from './pages/CoinShop';
 
 function App() {
   return (
@@ -24,6 +23,7 @@ function App() {
   <Route path="/compatibility-quiz" element={<CompatibilityQuiz />} />
   <Route path="/coin-shop" element={<CoinShop />} />
   <Route path="/buy-premium" element={<BuyPremium />} />
+  <Route path="/coin-shop" element={<CoinShop />} />
   </Routes>
     </Router>
   );
