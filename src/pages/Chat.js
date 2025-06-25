@@ -1,150 +1,150 @@
 // src/pages/Chat.js
-import React, { useEffect, useState } from "react";
-import { db, auth } from "../firebase/firebaseConfig";
+import React, { useEffect, useState } from 'react';
+import { db, auth } from '../firebase/firebaseConfig';
 import {
   collection,
-  doc,
-  getDoc,
-  getDocs,
-  addDoc,
   query,
   where,
-  orderBy,
   onSnapshot,
-} from "firebase/firestore";
+  addDoc,
+  orderBy,
+} from 'firebase/firestore';
 
-const Chat = () => {
-  const [currentUserData, setCurrentUserData] = useState(null);
-  const [matches, setMatches] = useState([]);
-  const [selectedMatch, setSelectedMatch] = useState(null);
+export default function Chat() {
+  const [matchedUsers, setMatchedUsers] = useState([]);
+  const [selectedChat, setSelectedChat] = useState(null);
   const [messages, setMessages] = useState([]);
-  const [msgInput, setMsgInput] = useState("");
+  const [msgInput, setMsgInput] = useState('');
 
-  useEffect(() => {
-    const fetchUser = async () => {
-      const user = auth.currentUser;
-      if (!user) return;
-      const snap = await getDoc(doc(db, "users", user.uid));
-      setCurrentUserData({ ...snap.data(), uid: user.uid });
-    };
-
-    fetchUser();
-  }, []);
+  const currentUser = auth.currentUser;
 
   useEffect(() => {
     const fetchMatches = async () => {
-      if (!currentUserData) return;
+      const likesRef = collection(db, 'likes');
 
-      const allUsersSnap = await getDocs(collection(db, "users"));
-      const matchedUsers = [];
-      allUsersSnap.forEach((docSnap) => {
-        const data = docSnap.data();
-        if (
-          data.swipes?.includes(currentUserData.uid) &&
-          currentUserData.swipes?.includes(data.uid)
-        ) {
-          matchedUsers.push(data);
+      const q = query(
+        likesRef,
+        where('from', '==', currentUser.uid)
+      );
+
+      const unsub = onSnapshot(q, async snapshot => {
+        const matchUids = [];
+
+        for (let doc1 of snapshot.docs) {
+          const reverseDoc = await onSnapshot(
+            query(
+              likesRef,
+              where('from', '==', doc1.data().to),
+              where('to', '==', currentUser.uid)
+            ),
+            reverseSnap => {
+              reverseSnap.forEach(doc2 => {
+                if (doc2.exists()) {
+                  matchUids.push(doc1.data().to);
+                }
+              });
+
+              setMatchedUsers(matchUids);
+            }
+          );
         }
       });
-      setMatches(matchedUsers);
+
+      return () => unsub();
     };
 
     fetchMatches();
-  }, [currentUserData]);
+  }, []);
 
-  const openChat = async (matchUser) => {
-    setSelectedMatch(matchUser);
-    const roomId =
-      currentUserData.uid > matchUser.uid
-        ? `${currentUserData.uid}_${matchUser.uid}`
-        : `${matchUser.uid}_${currentUserData.uid}`;
+  useEffect(() => {
+    if (!selectedChat) return;
 
-    const msgQuery = query(
-      collection(db, "messages", roomId, "chat"),
-      orderBy("timestamp")
+    const chatId =
+      currentUser.uid > selectedChat
+        ? `${currentUser.uid}_${selectedChat}`
+        : `${selectedChat}_${currentUser.uid}`;
+
+    const q = query(
+      collection(db, 'messages', chatId, 'chat'),
+      orderBy('timestamp')
     );
 
-    onSnapshot(msgQuery, (snapshot) => {
-      const msgs = snapshot.docs.map((doc) => doc.data());
+    const unsub = onSnapshot(q, snapshot => {
+      const msgs = snapshot.docs.map(doc => doc.data());
       setMessages(msgs);
     });
-  };
+
+    return () => unsub();
+  }, [selectedChat]);
 
   const sendMessage = async () => {
-    if (!msgInput || !selectedMatch) return;
+    if (!msgInput.trim() || !selectedChat) return;
 
-    const roomId =
-      currentUserData.uid > selectedMatch.uid
-        ? `${currentUserData.uid}_${selectedMatch.uid}`
-        : `${selectedMatch.uid}_${currentUserData.uid}`;
+    const chatId =
+      currentUser.uid > selectedChat
+        ? `${currentUser.uid}_${selectedChat}`
+        : `${selectedChat}_${currentUser.uid}`;
 
-    await addDoc(collection(db, "messages", roomId, "chat"), {
-      sender: currentUserData.uid,
-      receiver: selectedMatch.uid,
+    await addDoc(collection(db, 'messages', chatId, 'chat'), {
+      from: currentUser.uid,
+      to: selectedChat,
       text: msgInput,
       timestamp: new Date(),
     });
 
-    setMsgInput("");
+    setMsgInput('');
   };
 
   return (
-    <div className="flex h-screen bg-pink-50">
-      <div className="w-1/3 bg-white p-4 border-r overflow-y-auto">
-        <h3 className="font-bold text-lg mb-4">Your Matches</h3>
-        {matches.map((match) => (
+    <div className="flex flex-col md:flex-row h-screen">
+      <div className="w-full md:w-1/3 p-4 border-r overflow-y-auto">
+        <h2 className="text-lg font-bold mb-4">Matches</h2>
+        {matchedUsers.map(uid => (
           <div
-            key={match.uid}
-            className="p-2 hover:bg-pink-100 cursor-pointer rounded"
-            onClick={() => openChat(match)}
+            key={uid}
+            onClick={() => setSelectedChat(uid)}
+            className={`p-2 cursor-pointer hover:bg-pink-100 ${
+              selectedChat === uid ? 'bg-pink-200' : ''
+            }`}
           >
-            {match.name}
+            {uid}
           </div>
         ))}
       </div>
 
-      <div className="w-2/3 p-4 flex flex-col">
-        {selectedMatch ? (
-          <>
-            <h2 className="text-xl font-bold mb-2 border-b pb-2">
-              Chatting with {selectedMatch.name}
-            </h2>
-            <div className="flex-1 overflow-y-auto mb-4 border p-2 rounded bg-white">
-              {messages.map((msg, idx) => (
-                <div
-                  key={idx}
-                  className={`mb-2 p-2 rounded ${
-                    msg.sender === currentUserData.uid
-                      ? "bg-pink-200 text-right"
-                      : "bg-gray-200 text-left"
-                  }`}
-                >
-                  {msg.text}
-                </div>
-              ))}
+      <div className="w-full md:w-2/3 p-4 flex flex-col">
+        <div className="flex-1 overflow-y-auto border rounded p-2 mb-4 bg-white">
+          {messages.map((msg, idx) => (
+            <div
+              key={idx}
+              className={`p-2 my-1 rounded ${
+                msg.from === currentUser.uid
+                  ? 'text-right bg-pink-100'
+                  : 'text-left bg-gray-100'
+              }`}
+            >
+              {msg.text}
             </div>
-            <div className="flex">
-              <input
-                type="text"
-                value={msgInput}
-                onChange={(e) => setMsgInput(e.target.value)}
-                placeholder="Type your message..."
-                className="flex-1 border p-2 rounded-l"
-              />
-              <button
-                onClick={sendMessage}
-                className="bg-pink-500 text-white px-4 rounded-r"
-              >
-                Send
-              </button>
-            </div>
-          </>
-        ) : (
-          <div className="text-center text-gray-500 my-auto">Select a match to start chatting</div>
+          ))}
+        </div>
+
+        {selectedChat && (
+          <div className="flex">
+            <input
+              className="flex-1 p-2 border rounded-l"
+              value={msgInput}
+              onChange={e => setMsgInput(e.target.value)}
+              placeholder="Type a message"
+            />
+            <button
+              onClick={sendMessage}
+              className="bg-pink-500 text-white px-4 rounded-r"
+            >
+              Send
+            </button>
+          </div>
         )}
       </div>
     </div>
   );
-};
-
-export default Chat;
+}
