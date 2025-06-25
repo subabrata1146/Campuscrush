@@ -8,6 +8,11 @@ import {
   onSnapshot,
   addDoc,
   orderBy,
+  doc,
+  getDoc,
+  setDoc,
+  updateDoc,
+  increment,
 } from 'firebase/firestore';
 
 export default function Chat() {
@@ -21,33 +26,33 @@ export default function Chat() {
   useEffect(() => {
     const fetchMatches = async () => {
       const likesRef = collection(db, 'likes');
-
-      const q = query(
-        likesRef,
-        where('from', '==', currentUser.uid)
-      );
+      const q = query(likesRef, where('from', '==', currentUser.uid));
 
       const unsub = onSnapshot(q, async snapshot => {
         const matchUids = [];
 
-        for (let doc1 of snapshot.docs) {
-          const reverseDoc = await onSnapshot(
-            query(
-              likesRef,
-              where('from', '==', doc1.data().to),
-              where('to', '==', currentUser.uid)
-            ),
-            reverseSnap => {
+        const promises = snapshot.docs.map(doc1 => {
+          const toUser = doc1.data().to;
+          const reverseQ = query(
+            likesRef,
+            where('from', '==', toUser),
+            where('to', '==', currentUser.uid)
+          );
+
+          return new Promise(resolve => {
+            onSnapshot(reverseQ, reverseSnap => {
               reverseSnap.forEach(doc2 => {
                 if (doc2.exists()) {
-                  matchUids.push(doc1.data().to);
+                  matchUids.push(toUser);
                 }
               });
+              resolve();
+            });
+          });
+        });
 
-              setMatchedUsers(matchUids);
-            }
-          );
-        }
+        await Promise.all(promises);
+        setMatchedUsers([...new Set(matchUids)]);
       });
 
       return () => unsub();
@@ -77,6 +82,14 @@ export default function Chat() {
     return () => unsub();
   }, [selectedChat]);
 
+  const checkAccess = async (chatId) => {
+    const isMatched = matchedUsers.includes(selectedChat);
+    if (isMatched) return true;
+
+    const accessDoc = await getDoc(doc(db, 'directAccess', chatId));
+    return accessDoc.exists() && accessDoc.data().allowed;
+  };
+
   const sendMessage = async () => {
     if (!msgInput.trim() || !selectedChat) return;
 
@@ -85,6 +98,34 @@ export default function Chat() {
         ? `${currentUser.uid}_${selectedChat}`
         : `${selectedChat}_${currentUser.uid}`;
 
+    const messageAllowed = await checkAccess(chatId);
+
+    if (!messageAllowed) {
+      const confirmUseCoin = window.confirm(
+        "You're not matched. Use 1 coin to send a direct message?"
+      );
+
+      if (!confirmUseCoin) return;
+
+      // Check coin balance
+      const coinRef = doc(db, 'coins', currentUser.uid);
+      const coinSnap = await getDoc(coinRef);
+
+      if (!coinSnap.exists() || coinSnap.data().balance < 1) {
+        alert("Not enough coins!");
+        return;
+      }
+
+      // Deduct 1 coin
+      await updateDoc(coinRef, {
+        balance: increment(-1),
+      });
+
+      // Allow future access
+      await setDoc(doc(db, 'directAccess', chatId), { allowed: true });
+    }
+
+    // Send the message
     await addDoc(collection(db, 'messages', chatId, 'chat'), {
       from: currentUser.uid,
       to: selectedChat,
