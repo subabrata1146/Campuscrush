@@ -1,7 +1,7 @@
 import { initializeApp } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
-
+import { getStorage } from "firebase/storage";
 const firebaseConfig = {
   apiKey: "AIzaSyBWO15LGY8dWZlcSVUPUS6l72apaKVbM7c",
   authDomain: "campuscrush-b18d6.firebaseapp.com",
