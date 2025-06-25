@@ -10,6 +10,10 @@ import CoinShop from "./pages/CoinShop";
 import BuyPremium from "./pages/BuyPremium";
 import CompatibilityQuiz from "./pages/CompatibilityQuiz";
 import CoinShop from './pages/CoinShop';
+import DirectMessage from './pages/DirectMessage';
+
+
+
 
 function App() {
   return (
@@ -24,6 +28,7 @@ function App() {
   <Route path="/coin-shop" element={<CoinShop />} />
   <Route path="/buy-premium" element={<BuyPremium />} />
   <Route path="/coin-shop" element={<CoinShop />} />
+  <Route path="/direct-message" element={<DirectMessage />} />
   </Routes>
     </Router>
   );
