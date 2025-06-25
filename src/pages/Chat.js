@@ -1,6 +1,6 @@
 // src/pages/Chat.js
 import React, { useEffect, useState } from "react";
-import { db, auth } from "../../firebase/firebaseConfig";
+import { db, auth } from "../firebase/firebaseConfig";
 import {
   collection,
   doc,
