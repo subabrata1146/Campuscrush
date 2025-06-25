@@ -1,98 +1,84 @@
-// src/pages/CompatibilityQuiz.js
 import React, { useState } from 'react';
-import { db, auth } from '../firebase/firebaseConfig';
+import { auth, db } from '../firebase/firebaseConfig';
 import { doc, setDoc } from 'firebase/firestore';
 import { useNavigate } from 'react-router-dom';
 
 const questions = [
   {
-    q: "Do you prefer night or morning?",
-    options: ["Night", "Morning"],
+    q: "What's your ideal date?",
+    options: ["Movie night", "Long walk", "Party", "Study session"]
   },
   {
-    q: "What would you rather do on a date?",
-    options: ["Movie", "Adventure", "Food", "Chill"],
+    q: "Which pet do you prefer?",
+    options: ["Dog", "Cat", "Rabbit", "No pets"]
   },
   {
-    q: "Pet lover?",
-    options: ["Yes", "No"],
+    q: "What’s your favorite weekend activity?",
+    options: ["Gaming", "Outing", "Reading", "Sleeping"]
   },
   {
-    q: "Introvert or Extrovert?",
-    options: ["Introvert", "Extrovert", "Mix"],
+    q: "Are you a morning or night person?",
+    options: ["Morning", "Night", "Both", "None"]
   },
   {
-    q: "Do you believe in love at first sight?",
-    options: ["Yes", "No", "Maybe"],
-  },
+    q: "How social are you?",
+    options: ["Very", "Little", "Depends", "Not at all"]
+  }
 ];
 
 export default function CompatibilityQuiz() {
-  const [answers, setAnswers] = useState({});
+  const [answers, setAnswers] = useState(Array(questions.length).fill(""));
   const navigate = useNavigate();
 
-  const handleAnswer = (index, option) => {
-    setAnswers(prev => ({ ...prev, [index]: option }));
+  const handleAnswerChange = (index, value) => {
+    const updated = [...answers];
+    updated[index] = value;
+    setAnswers(updated);
   };
 
   const handleSubmit = async () => {
     const user = auth.currentUser;
-    if (!user) {
-      alert("User not logged in");
-      return;
-    }
+    if (!user) return alert("Please login first");
 
-    if (Object.keys(answers).length < questions.length) {
-      alert("Please answer all questions.");
-      return;
-    }
+    if (answers.includes("")) return alert("Answer all questions");
 
-    try {
-      await setDoc(doc(db, 'quizAnswers', user.uid), {
-        uid: user.uid,
-        answers,
-        timestamp: new Date(),
-      });
+    await setDoc(doc(db, 'quizAnswers', user.uid), {
+      uid: user.uid,
+      answers,
+      timestamp: new Date()
+    });
 
-      alert("Quiz submitted! Compatibility saved.");
-      navigate('/');
-    } catch (err) {
-      console.error(err);
-      alert("Failed to submit quiz.");
-    }
+    alert("Quiz submitted successfully!");
+    navigate('/');
   };
 
   return (
-    <div className="min-h-screen p-4 bg-pink-50">
-      <h1 className="text-2xl font-bold text-center mb-6">Compatibility Quiz</h1>
-      <div className="max-w-xl mx-auto bg-white shadow-md rounded p-6 space-y-4">
-        {questions.map((q, index) => (
-          <div key={index}>
-            <p className="font-semibold">{q.q}</p>
-            <div className="flex flex-wrap gap-2 mt-2">
-              {q.options.map(opt => (
-                <button
-                  key={opt}
-                  onClick={() => handleAnswer(index, opt)}
-                  className={`px-3 py-1 rounded ${
-                    answers[index] === opt
-                      ? 'bg-pink-500 text-white'
-                      : 'bg-gray-200'
-                  }`}
-                >
-                  {opt}
-                </button>
-              ))}
-            </div>
-          </div>
-        ))}
-        <button
-          onClick={handleSubmit}
-          className="w-full bg-pink-600 text-white py-2 rounded mt-4"
-        >
-          Submit Answers
-        </button>
-      </div>
+    <div className="p-6 max-w-xl mx-auto bg-white shadow rounded mt-8">
+      <h2 className="text-2xl font-bold text-center mb-6">💡 Compatibility Quiz</h2>
+      {questions.map((q, i) => (
+        <div key={i} className="mb-4">
+          <p className="font-semibold">{i + 1}. {q.q}</p>
+          {q.options.map(opt => (
+            <label key={opt} className="block">
+              <input
+                type="radio"
+                name={`q${i}`}
+                value={opt}
+                checked={answers[i] === opt}
+                onChange={() => handleAnswerChange(i, opt)}
+                className="mr-2"
+              />
+              {opt}
+            </label>
+          ))}
+        </div>
+      ))}
+      <button
+        onClick={handleSubmit}
+        className="bg-pink-500 hover:bg-pink-600 text-white px-4 py-2 rounded w-full"
+      >
+        Submit Quiz
+      </button>
     </div>
   );
 }
