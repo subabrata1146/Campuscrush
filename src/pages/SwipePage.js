@@ -39,17 +39,30 @@ export default function SwipePage() {
       const lookingFor = currentUserData?.lookingFor || 'Any';
       const seen = currentUserData?.seenUsers || [];
 
-      const snapshot = await getDocs(collection(db, 'users'));
-      const filtered = snapshot.docs
-        .map(doc => doc.data())
-        .filter(
-          p =>
-            p.uid !== user.uid &&
-            !seen.includes(p.uid) &&
-            (lookingFor === 'Any' || p.gender === lookingFor)
-        );
+      const currentQuizDoc = await getDoc(doc(db, 'quizAnswers', user.uid));
+      const currentAnswers = currentQuizDoc.exists() ? currentQuizDoc.data().answers : [];
 
-      setProfiles(filtered);
+      const snapshot = await getDocs(collection(db, 'users'));
+
+      const filtered = await Promise.all(snapshot.docs.map(async userDoc => {
+        const data = userDoc.data();
+        if (data.uid === user.uid || seen.includes(data.uid) || (lookingFor !== 'Any' && data.gender !== lookingFor)) return null;
+
+        const quizDoc = await getDoc(doc(db, 'quizAnswers', data.uid));
+        const otherAnswers = quizDoc.exists() ? quizDoc.data().answers : [];
+
+        let score = 0;
+        currentAnswers.forEach((ans, idx) => {
+          if (ans === otherAnswers[idx]) score++;
+        });
+
+        return {
+          ...data,
+          compatibility: currentAnswers.length ? Math.round((score / currentAnswers.length) * 100) : null,
+        };
+      }));
+
+      setProfiles(filtered.filter(p => p !== null));
       setLoading(false);
     };
 
@@ -61,21 +74,18 @@ export default function SwipePage() {
     const likedUser = profiles[current];
 
     if (liked) {
-      // Like saved
       await setDoc(doc(db, 'likes', `${user.uid}_${likedUser.uid}`), {
         from: user.uid,
         to: likedUser.uid,
         timestamp: new Date(),
       });
 
-      // Match check
       const reverseDoc = await getDoc(doc(db, 'likes', `${likedUser.uid}_${user.uid}`));
       if (reverseDoc.exists()) {
         alert(`🎉 It's a match with ${likedUser.name}!`);
       }
     }
 
-    // Save seen user to prevent showing again
     const userRef = doc(db, 'users', user.uid);
     await updateDoc(userRef, {
       seenUsers: incrementArray(likedUser.uid),
@@ -118,6 +128,11 @@ export default function SwipePage() {
         />
         <h2 className="text-xl font-semibold">{profile.name}</h2>
         <p className="text-sm text-gray-500">{profile.gender}</p>
+        {profile.compatibility !== null && (
+          <p className="text-green-600 text-sm mt-1">
+            Compatibility: {profile.compatibility}%
+          </p>
+        )}
       </motion.div>
 
       <div className="flex gap-6 mt-6">
