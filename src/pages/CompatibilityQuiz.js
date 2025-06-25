@@ -1,71 +1,83 @@
 // src/pages/CompatibilityQuiz.js
-import React, { useState } from "react";
-import { auth, db } from "../firebase/firebaseConfig";
-import { doc, updateDoc } from "firebase/firestore";
-import { useNavigate } from "react-router-dom";
+import React, { useState } from 'react';
+import { db, auth } from '../firebase/firebaseConfig';
+import { doc, setDoc } from 'firebase/firestore';
+import { useNavigate } from 'react-router-dom';
 
 const questions = [
   {
-    q: "Are you more of an introvert or extrovert?",
-    options: ["Introvert", "Extrovert"],
+    q: "Do you prefer night or morning?",
+    options: ["Night", "Morning"],
   },
   {
-    q: "Do you prefer night outs or cozy nights in?",
-    options: ["Night outs", "Cozy nights in"],
+    q: "What would you rather do on a date?",
+    options: ["Movie", "Adventure", "Food", "Chill"],
   },
   {
-    q: "What's your ideal date?",
-    options: ["Dinner", "Movie", "Adventure", "Coffee"],
+    q: "Pet lover?",
+    options: ["Yes", "No"],
   },
   {
-    q: "How often do you like texting your date?",
-    options: ["Frequently", "Sometimes", "Rarely"],
+    q: "Introvert or Extrovert?",
+    options: ["Introvert", "Extrovert", "Mix"],
   },
   {
-    q: "Pick a vibe",
-    options: ["Romantic", "Funny", "Chill", "Adventurous"],
+    q: "Do you believe in love at first sight?",
+    options: ["Yes", "No", "Maybe"],
   },
 ];
 
-const CompatibilityQuiz = () => {
-  const [answers, setAnswers] = useState(Array(questions.length).fill(""));
+export default function CompatibilityQuiz() {
+  const [answers, setAnswers] = useState({});
   const navigate = useNavigate();
 
-  const handleChange = (qIndex, value) => {
-    const newAns = [...answers];
-    newAns[qIndex] = value;
-    setAnswers(newAns);
+  const handleAnswer = (index, option) => {
+    setAnswers(prev => ({ ...prev, [index]: option }));
   };
 
   const handleSubmit = async () => {
-    if (answers.includes("")) return alert("Please answer all questions.");
     const user = auth.currentUser;
-    if (!user) return;
+    if (!user) {
+      alert("User not logged in");
+      return;
+    }
 
-    await updateDoc(doc(db, "users", user.uid), {
-      compatibilityAnswers: answers,
-    });
+    if (Object.keys(answers).length < questions.length) {
+      alert("Please answer all questions.");
+      return;
+    }
 
-    alert("✅ Quiz submitted! Your profile is now more matchable.");
-    navigate("/profile");
+    try {
+      await setDoc(doc(db, 'quizAnswers', user.uid), {
+        uid: user.uid,
+        answers,
+        timestamp: new Date(),
+      });
+
+      alert("Quiz submitted! Compatibility saved.");
+      navigate('/');
+    } catch (err) {
+      console.error(err);
+      alert("Failed to submit quiz.");
+    }
   };
 
   return (
-    <div className="min-h-screen bg-blue-50 p-6 flex flex-col items-center">
-      <h2 className="text-2xl font-bold mb-6">🧠 Compatibility Quiz</h2>
-      <div className="w-full max-w-2xl space-y-6">
+    <div className="min-h-screen p-4 bg-pink-50">
+      <h1 className="text-2xl font-bold text-center mb-6">Compatibility Quiz</h1>
+      <div className="max-w-xl mx-auto bg-white shadow-md rounded p-6 space-y-4">
         {questions.map((q, index) => (
-          <div key={index} className="bg-white p-4 rounded shadow">
-            <p className="font-semibold mb-2">{q.q}</p>
-            <div className="grid grid-cols-2 gap-2">
-              {q.options.map((opt, i) => (
+          <div key={index}>
+            <p className="font-semibold">{q.q}</p>
+            <div className="flex flex-wrap gap-2 mt-2">
+              {q.options.map(opt => (
                 <button
-                  key={i}
-                  onClick={() => handleChange(index, opt)}
-                  className={`px-4 py-2 rounded ${
+                  key={opt}
+                  onClick={() => handleAnswer(index, opt)}
+                  className={`px-3 py-1 rounded ${
                     answers[index] === opt
-                      ? "bg-blue-500 text-white"
-                      : "bg-gray-200"
+                      ? 'bg-pink-500 text-white'
+                      : 'bg-gray-200'
                   }`}
                 >
                   {opt}
@@ -74,15 +86,13 @@ const CompatibilityQuiz = () => {
             </div>
           </div>
         ))}
+        <button
+          onClick={handleSubmit}
+          className="w-full bg-pink-600 text-white py-2 rounded mt-4"
+        >
+          Submit Answers
+        </button>
       </div>
-      <button
-        onClick={handleSubmit}
-        className="mt-8 bg-blue-600 text-white px-6 py-2 rounded-lg"
-      >
-        Submit Answers
-      </button>
     </div>
   );
-};
-
-export default CompatibilityQuiz;
+}
