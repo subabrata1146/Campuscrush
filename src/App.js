@@ -12,6 +12,8 @@ import CompatibilityQuiz from "./pages/CompatibilityQuiz";
 import CoinShop from './pages/CoinShop';
 import DirectMessage from './pages/DirectMessage';
 import ReferralPage from './pages/ReferralPage';
+import VerifyStudent from './pages/VerifyStudent';
+
 
 
 
@@ -31,6 +33,7 @@ function App() {
   <Route path="/coin-shop" element={<CoinShop />} />
   <Route path="/direct-message" element={<DirectMessage />} />
   <Route path="/referral" element={<ReferralPage />} />
+  <Route path="/verify" element={<VerifyStudent />} />
   </Routes>
     </Router>
   );
