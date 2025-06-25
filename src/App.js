@@ -34,6 +34,8 @@ function App() {
   <Route path="/direct-message" element={<DirectMessage />} />
   <Route path="/referral" element={<ReferralPage />} />
   <Route path="/verify" element={<VerifyStudent />} />
+  <Route path="/verify" element={<VerificationUpload />} />
+
   </Routes>
     </Router>
   );
