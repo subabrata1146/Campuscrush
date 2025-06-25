@@ -1,7 +1,7 @@
 
 // src/pages/SwipePage.js
 import React, { useEffect, useState } from "react";
-import { db, auth } from "../../firebase/firebaseConfig";
+import { db, auth } from "../firebase/firebaseConfig";
 import { collection, getDocs, updateDoc, doc } from "firebase/firestore";
 import { onAuthStateChanged } from "firebase/auth";
 import { useNavigate } from "react-router-dom";
