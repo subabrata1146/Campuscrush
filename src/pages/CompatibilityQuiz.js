@@ -1,6 +1,6 @@
 // src/pages/CompatibilityQuiz.js
 import React, { useState } from "react";
-import { auth, db } from "../../firebase/firebaseConfig";
+import { auth, db } from "../firebase/firebaseConfig";
 import { doc, updateDoc } from "firebase/firestore";
 import { useNavigate } from "react-router-dom";
 
