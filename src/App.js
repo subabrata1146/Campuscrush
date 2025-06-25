@@ -24,8 +24,7 @@ function App() {
   <Route path="/compatibility-quiz" element={<CompatibilityQuiz />} />
   <Route path="/coin-shop" element={<CoinShop />} />
   <Route path="/buy-premium" element={<BuyPremium />} />
-</Routes>
-      </Routes>
+
     </Router>
   );
 }
