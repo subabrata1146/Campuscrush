@@ -1,13 +1,22 @@
 // src/pages/SwipePage.js
 import React, { useEffect, useState } from 'react';
 import { db, auth } from '../firebase/firebaseConfig';
-import { collection, getDocs, doc, setDoc, getDoc } from 'firebase/firestore';
+import {
+  collection,
+  getDocs,
+  doc,
+  setDoc,
+  getDoc,
+  increment,
+  updateDoc,
+} from 'firebase/firestore';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 
 export default function SwipePage() {
   const [profiles, setProfiles] = useState([]);
   const [current, setCurrent] = useState(0);
+  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -20,14 +29,28 @@ export default function SwipePage() {
 
       const currentUserDoc = await getDoc(doc(db, 'users', user.uid));
       const currentUserData = currentUserDoc.data();
-      const lookingFor = currentUserData?.lookingFor;
+
+      if (!currentUserData || !currentUserData.verified) {
+        alert("Please complete ID and selfie verification to use swipe features.");
+        navigate('/profile');
+        return;
+      }
+
+      const lookingFor = currentUserData?.lookingFor || 'Any';
+      const seen = currentUserData?.seenUsers || [];
 
       const snapshot = await getDocs(collection(db, 'users'));
       const filtered = snapshot.docs
         .map(doc => doc.data())
-        .filter(p => p.uid !== user.uid && (lookingFor === 'Any' || p.gender === lookingFor));
-      
+        .filter(
+          p =>
+            p.uid !== user.uid &&
+            !seen.includes(p.uid) &&
+            (lookingFor === 'Any' || p.gender === lookingFor)
+        );
+
       setProfiles(filtered);
+      setLoading(false);
     };
 
     fetchProfiles();
@@ -38,31 +61,46 @@ export default function SwipePage() {
     const likedUser = profiles[current];
 
     if (liked) {
-      // Save like
+      // Like saved
       await setDoc(doc(db, 'likes', `${user.uid}_${likedUser.uid}`), {
         from: user.uid,
         to: likedUser.uid,
         timestamp: new Date(),
       });
 
-      // Check if they liked back
+      // Match check
       const reverseDoc = await getDoc(doc(db, 'likes', `${likedUser.uid}_${user.uid}`));
       if (reverseDoc.exists()) {
         alert(`🎉 It's a match with ${likedUser.name}!`);
-        // You can also write to a "matches" collection here
       }
     }
+
+    // Save seen user to prevent showing again
+    const userRef = doc(db, 'users', user.uid);
+    await updateDoc(userRef, {
+      seenUsers: incrementArray(likedUser.uid),
+    });
 
     setCurrent(prev => prev + 1);
   };
 
+  const incrementArray = (uid) => {
+    return {
+      seenUsers: (prev) => (Array.isArray(prev) ? [...new Set([...prev, uid])] : [uid]),
+    };
+  };
+
   const profile = profiles[current];
 
-  if (!profile) return (
-    <div className="flex flex-col items-center justify-center h-screen">
-      <h2 className="text-xl">No more profiles for now 😅</h2>
-    </div>
-  );
+  if (loading) return <div className="text-center mt-10">Loading...</div>;
+
+  if (!profile) {
+    return (
+      <div className="flex flex-col items-center justify-center h-screen">
+        <h2 className="text-xl">No more profiles for now 😅</h2>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col items-center justify-center h-screen bg-pink-50">
