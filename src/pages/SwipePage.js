@@ -17,6 +17,7 @@ export default function SwipePage() {
   const [profiles, setProfiles] = useState([]);
   const [current, setCurrent] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [currentUserData, setCurrentUserData] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -28,41 +29,46 @@ export default function SwipePage() {
       }
 
       const currentUserDoc = await getDoc(doc(db, 'users', user.uid));
-      const currentUserData = currentUserDoc.data();
+      const data = currentUserDoc.data();
+      setCurrentUserData(data);
 
-      if (!currentUserData || !currentUserData.verified) {
+      if (!data || !data.verified) {
         alert("Please complete ID and selfie verification to use swipe features.");
         navigate('/profile');
         return;
       }
 
-      const lookingFor = currentUserData?.lookingFor || 'Any';
-      const seen = currentUserData?.seenUsers || [];
-
-      const currentQuizDoc = await getDoc(doc(db, 'quizAnswers', user.uid));
-      const currentAnswers = currentQuizDoc.exists() ? currentQuizDoc.data().answers : [];
+      const lookingFor = data?.lookingFor || 'Any';
+      const seen = data?.seenUsers || [];
 
       const snapshot = await getDocs(collection(db, 'users'));
+      const filtered = await Promise.all(
+        snapshot.docs
+          .map(doc => doc.data())
+          .filter(
+            p =>
+              p.uid !== user.uid &&
+              !seen.includes(p.uid) &&
+              (lookingFor === 'Any' || p.gender === lookingFor)
+          )
+          .map(async profile => {
+            const theirQuiz = await getDoc(doc(db, 'quizAnswers', profile.uid));
+            const yourQuiz = await getDoc(doc(db, 'quizAnswers', user.uid));
 
-      const filtered = await Promise.all(snapshot.docs.map(async userDoc => {
-        const data = userDoc.data();
-        if (data.uid === user.uid || seen.includes(data.uid) || (lookingFor !== 'Any' && data.gender !== lookingFor)) return null;
+            let score = 0;
+            if (theirQuiz.exists() && yourQuiz.exists()) {
+              const yourAnswers = yourQuiz.data().answers;
+              const theirAnswers = theirQuiz.data().answers;
+              const total = yourAnswers.length;
+              const match = yourAnswers.filter((ans, idx) => ans === theirAnswers[idx]).length;
+              score = Math.round((match / total) * 100);
+            }
 
-        const quizDoc = await getDoc(doc(db, 'quizAnswers', data.uid));
-        const otherAnswers = quizDoc.exists() ? quizDoc.data().answers : [];
+            return { ...profile, compatibility: score };
+          })
+      );
 
-        let score = 0;
-        currentAnswers.forEach((ans, idx) => {
-          if (ans === otherAnswers[idx]) score++;
-        });
-
-        return {
-          ...data,
-          compatibility: currentAnswers.length ? Math.round((score / currentAnswers.length) * 100) : null,
-        };
-      }));
-
-      setProfiles(filtered.filter(p => p !== null));
+      setProfiles(filtered);
       setLoading(false);
     };
 
@@ -128,10 +134,9 @@ export default function SwipePage() {
         />
         <h2 className="text-xl font-semibold">{profile.name}</h2>
         <p className="text-sm text-gray-500">{profile.gender}</p>
-        {profile.compatibility !== null && (
-          <p className="text-green-600 text-sm mt-1">
-            Compatibility: {profile.compatibility}%
-          </p>
+        <p className="text-sm text-purple-600 mt-1">💖 Compatibility: {profile.compatibility || 0}%</p>
+        {currentUserData?.isPremium && (
+          <p className="text-xs mt-1 text-yellow-600">🌟 Premium User</p>
         )}
       </motion.div>
 
