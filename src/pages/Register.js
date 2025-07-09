@@ -8,7 +8,7 @@ export default function Register() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const navigate = useNavigate();
-
+   const [referral, setReferral] = useState('');
   const handleRegister = async () => {
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
@@ -51,6 +51,14 @@ export default function Register() {
         placeholder="Password"
         onChange={e => setPassword(e.target.value)}
       />
+       
+
+<input
+  className="mb-2 p-2 border"
+  placeholder="Referral Code (optional)"
+  onChange={e => setReferral(e.target.value)}
+/>
+
       <button
         className="bg-blue-500 text-white px-4 py-2 rounded"
         onClick={handleRegister}
