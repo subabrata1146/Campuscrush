@@ -30,13 +30,13 @@ export default function SwipePage() {
 
       const currentUserDoc = await getDoc(doc(db, 'users', user.uid));
       const data = currentUserDoc.data();
-      setCurrentUserData(data);
+ if (!data?.verification?.verified) {
+  alert("Please complete ID and selfie verification to use swipe features.");
+  navigate('/verify');
+  return;
+}
+setCurrentUserData(data);
 
-     if (!currentUserData?.verification?.verified) {
-      alert("Please complete ID and selfie verification to use swipe features.");
-      navigate('/verify');
-      return;
-    }
 
       const lookingFor = data?.lookingFor || 'Any';
       const seen = data?.seenUsers || [];
@@ -93,9 +93,10 @@ export default function SwipePage() {
     }
 
     const userRef = doc(db, 'users', user.uid);
-    await updateDoc(userRef, {
-      seenUsers: incrementArray(likedUser.uid),
-    });
+  await updateDoc(userRef, {
+  seenUsers: Array.from(new Set([...(currentUserData?.seenUsers || []), likedUser.uid])),
+});
+
 
     setCurrent(prev => prev + 1);
   };
