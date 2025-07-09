@@ -13,6 +13,9 @@ import CoinShop from './pages/CoinShop';
 import DirectMessage from './pages/DirectMessage';
 import ReferralPage from './pages/ReferralPage';
 import VerifyStudent from './pages/VerifyStudent';
+import AdminPanel from './pages/AdminPanel';
+
+
 
 
 
@@ -35,7 +38,7 @@ function App() {
   <Route path="/referral" element={<ReferralPage />} />
   <Route path="/verify" element={<VerifyStudent />} />
   <Route path="/verify" element={<VerificationUpload />} />
-
+  <Route path="/admin" element={<AdminPanel />} />
   </Routes>
     </Router>
   );
