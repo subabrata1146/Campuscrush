@@ -36,22 +36,33 @@ export default function CompatibilityQuiz() {
     setAnswers(updated);
   };
 
-  const handleSubmit = async () => {
-    const user = auth.currentUser;
-    if (!user) return alert("Please login first");
+ const handleSubmit = async () => {
+  const user = auth.currentUser;
+  if (!user) return alert("Please login first");
 
-    if (answers.includes("")) return alert("Answer all questions");
+  if (answers.includes("")) return alert("Answer all questions");
 
-    await setDoc(doc(db, 'quizAnswers', user.uid), {
+  const userRef = doc(db, 'users', user.uid);
+  const quizRef = doc(db, 'quizAnswers', user.uid);
+
+  try {
+    // Save quiz answers
+    await setDoc(quizRef, {
       uid: user.uid,
       answers,
       timestamp: new Date()
     });
 
-    alert("Quiz submitted successfully!");
-    navigate('/');
-  };
+    // Update user's Firestore profile with quiz completion
+    await setDoc(userRef, { hasCompletedQuiz: true }, { merge: true });
 
+    alert("Quiz submitted successfully!");
+    navigate('/swipe');
+  } catch (error) {
+    console.error("Error submitting quiz: ", error);
+    alert("Failed to submit quiz. Please try again.");
+  }
+};
   return (
     <div className="p-6 max-w-xl mx-auto bg-white shadow rounded mt-8">
       <h2 className="text-2xl font-bold text-center mb-6">💡 Compatibility Quiz</h2>
