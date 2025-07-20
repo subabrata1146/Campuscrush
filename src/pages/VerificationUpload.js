@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
-import { auth, storage, db } from '../firebase/firebaseConfig';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { auth, db } from '../firebase/firebaseConfig';
 import { doc, updateDoc } from 'firebase/firestore';
 import { useNavigate } from 'react-router-dom';
 
@@ -9,6 +8,16 @@ export default function VerificationUpload() {
   const [selfie, setSelfie] = useState(null);
   const [uploading, setUploading] = useState(false);
   const navigate = useNavigate();
+
+  // Helper function to convert file to base64
+  const toBase64 = (file) => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = (error) => reject(error);
+    });
+  };
 
   const handleUpload = async () => {
     if (!idCard || !selfie) {
@@ -21,30 +30,24 @@ export default function VerificationUpload() {
       const user = auth.currentUser;
       if (!user) return;
 
-      const idRef = ref(storage, `verifications/${user.uid}_id`);
-      const selfieRef = ref(storage, `verifications/${user.uid}_selfie`);
-
-      await uploadBytes(idRef, idCard);
-      await uploadBytes(selfieRef, selfie);
-
-      const idUrl = await getDownloadURL(idRef);
-      const selfieUrl = await getDownloadURL(selfieRef);
+      const idCardBase64 = await toBase64(idCard);
+      const selfieBase64 = await toBase64(selfie);
 
       const userRef = doc(db, 'users', user.uid);
       await updateDoc(userRef, {
         verification: {
-          idUrl,
-          selfieUrl,
+          idCard: idCardBase64,
+          selfie: selfieBase64,
           verified: false,
           submittedAt: new Date(),
         }
       });
 
-      alert("Verification submitted! Please wait for approval.");
+      alert("Verification submitted! Please wait for admin approval.");
       navigate('/');
     } catch (err) {
       console.error(err);
-      alert("Error uploading. Please try again.");
+      alert("Upload failed. Please try again.");
     } finally {
       setUploading(false);
     }
