@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { db, auth, storage } from '../firebase/firebaseConfig';
-import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
+import { db, auth } from '../firebase/firebaseConfig';
 import { doc, setDoc } from 'firebase/firestore';
 import { useNavigate } from 'react-router-dom';
 import { checkPremiumStatus } from '../utils/checkPremium';
@@ -25,6 +24,20 @@ export default function Profile() {
     fetchPremium();
   }, []);
 
+  const uploadToCloudinary = async (file) => {
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("upload_preset", "your_unsigned_preset"); // 🔁 replace with your unsigned preset
+
+    const res = await fetch("https://api.cloudinary.com/v1_1/YOUR_CLOUD_NAME/image/upload", {
+      method: "POST",
+      body: formData
+    });
+
+    const data = await res.json();
+    return data.secure_url;
+  };
+
   const handleSubmit = async () => {
     if (!name || !gender || !lookingFor || !photo) {
       alert("Please fill all fields.");
@@ -38,38 +51,26 @@ export default function Profile() {
         return;
       }
 
-      const storageRef = ref(storage, `profilePics/${user.uid}`);
-      const uploadTask = uploadBytesResumable(storageRef, photo);
+      setUploadProgress(0);
 
-      uploadTask.on(
-        'state_changed',
-        (snapshot) => {
-          const progress = Math.round((snapshot.bytesTransferred / snapshot.totalBytes) * 100);
-          setUploadProgress(progress);
-        },
-        (error) => {
-          console.error("Upload failed:", error);
-          alert("Error uploading photo. If you're seeing CORS errors, set Firebase Storage CORS.");
-        },
-        async () => {
-          const photoURL = await getDownloadURL(uploadTask.snapshot.ref);
-          await setDoc(doc(db, 'users', user.uid), {
-            uid: user.uid,
-            name,
-            gender,
-            lookingFor,
-            photoURL,
-            email: user.email,
-            createdAt: new Date()
-          });
+      const imageURL = await uploadToCloudinary(photo);
+      setUploadProgress(100);
 
-          alert("Profile saved successfully!");
-          navigate('/');
-        }
-      );
+      await setDoc(doc(db, 'users', user.uid), {
+        uid: user.uid,
+        name,
+        gender,
+        lookingFor,
+        photoURL: imageURL,
+        email: user.email,
+        createdAt: new Date()
+      });
+
+      alert("Profile saved successfully!");
+      navigate('/');
     } catch (error) {
       console.error(error);
-      alert("Error saving profile.");
+      alert("Error saving profile or uploading image.");
     }
   };
 
