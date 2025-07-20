@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
-import { auth, storage, db } from '../firebase/firebaseConfig';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { auth, db } from '../firebase/firebaseConfig';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { useNavigate } from 'react-router-dom';
 
@@ -9,6 +8,25 @@ export default function VerifyStudent() {
   const [selfie, setSelfie] = useState(null);
   const [uploading, setUploading] = useState(false);
   const navigate = useNavigate();
+
+  // 🔁 REPLACE THESE WITH YOUR CLOUDINARY DETAILS
+  const CLOUD_NAME = 'dx4knny3g';
+  const UPLOAD_PRESET = 'campuscrush_unsigned';
+
+  const uploadToCloudinary = async (file) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('upload_preset', UPLOAD_PRESET);
+    formData.append('cloud_name', CLOUD_NAME);
+
+    const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`, {
+      method: 'POST',
+      body: formData,
+    });
+
+    const data = await res.json();
+    return data.secure_url;
+  };
 
   const handleSubmit = async () => {
     const user = auth.currentUser;
@@ -21,14 +39,8 @@ export default function VerifyStudent() {
     try {
       setUploading(true);
 
-      const idRef = ref(storage, `verifications/${user.uid}_idCard`);
-      const selfieRef = ref(storage, `verifications/${user.uid}_selfie`);
-
-      await uploadBytes(idRef, idCard);
-      await uploadBytes(selfieRef, selfie);
-
-      const idCardURL = await getDownloadURL(idRef);
-      const selfieURL = await getDownloadURL(selfieRef);
+      const idCardURL = await uploadToCloudinary(idCard);
+      const selfieURL = await uploadToCloudinary(selfie);
 
       await setDoc(doc(db, 'verifications', user.uid), {
         uid: user.uid,
