@@ -27,15 +27,26 @@ export default function Profile() {
   const uploadToCloudinary = async (file) => {
     const formData = new FormData();
     formData.append("file", file);
-    formData.append("upload_preset", "your_unsigned_preset"); // 🔁 replace with your unsigned preset
+    formData.append("upload_preset", "campuscrush_unsigned"); // 🟡 Replace with your unsigned preset
 
-    const res = await fetch("https://api.cloudinary.com/v1_1/YOUR_CLOUD_NAME/image/upload", {
-      method: "POST",
-      body: formData
-    });
+    try {
+      const res = await fetch("https://api.cloudinary.com/v1_1/dx4knny3g/image/upload", {
+        method: "POST",
+        body: formData
+      });
 
-    const data = await res.json();
-    return data.secure_url;
+      const data = await res.json();
+
+      if (data.secure_url) {
+        return data.secure_url;
+      } else {
+        console.error("Cloudinary Error:", data);
+        return null;
+      }
+    } catch (error) {
+      console.error("Upload failed:", error);
+      return null;
+    }
   };
 
   const handleSubmit = async () => {
@@ -54,6 +65,11 @@ export default function Profile() {
       setUploadProgress(0);
 
       const imageURL = await uploadToCloudinary(photo);
+      if (!imageURL) {
+        alert("Image upload failed. Check Cloudinary preset and cloud name.");
+        return;
+      }
+
       setUploadProgress(100);
 
       await setDoc(doc(db, 'users', user.uid), {
