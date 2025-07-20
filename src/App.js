@@ -9,7 +9,7 @@ import Chat from "./pages/Chat";
 import CoinShop from "./pages/CoinShop";
 import BuyPremium from "./pages/BuyPremium";
 import CompatibilityQuiz from "./pages/CompatibilityQuiz";
-
+import VerificationUpload from './pages/VerificationUpload';
 import DirectMessage from './pages/DirectMessage';
 import ReferralPage from './pages/ReferralPage';
 import VerifyStudent from './pages/VerifyStudent';
