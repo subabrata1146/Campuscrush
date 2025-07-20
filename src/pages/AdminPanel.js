@@ -1,13 +1,20 @@
-// src/pages/AdminPanel.js
 import React, { useState, useEffect } from 'react';
 import { db } from '../firebase/firebaseConfig';
-import { collection, getDocs, doc, updateDoc, increment } from 'firebase/firestore';
+import {
+  collection,
+  getDocs,
+  doc,
+  updateDoc,
+  increment,
+  getDoc
+} from 'firebase/firestore';
 
 export default function AdminPanel() {
   const [users, setUsers] = useState([]);
   const [selected, setSelected] = useState(null);
   const [coins, setCoins] = useState(0);
   const [makePremium, setMakePremium] = useState(false);
+  const [verificationData, setVerificationData] = useState(null);
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -17,6 +24,23 @@ export default function AdminPanel() {
     };
     fetchUsers();
   }, []);
+
+  const fetchVerification = async (uid) => {
+    const docRef = doc(db, 'verifications', uid);
+    const docSnap = await getDoc(docRef);
+    if (docSnap.exists()) {
+      setVerificationData({ id: uid, ...docSnap.data() });
+    } else {
+      setVerificationData(null);
+    }
+  };
+
+  const handleUserClick = (user) => {
+    setSelected(user);
+    fetchVerification(user.id);
+    setCoins(0);
+    setMakePremium(user.isPremium || false);
+  };
 
   const updateUser = async () => {
     if (!selected) return;
@@ -38,16 +62,39 @@ export default function AdminPanel() {
     setSelected(null);
     setCoins(0);
     setMakePremium(false);
+    setVerificationData(null);
+  };
+
+  const approveVerification = async () => {
+    await updateDoc(doc(db, "verifications", verificationData.id), {
+      status: "approved",
+    });
+    await updateDoc(doc(db, "users", verificationData.id), {
+      verified: true,
+    });
+    alert("Verification Approved!");
+    setVerificationData(null);
+  };
+
+  const rejectVerification = async () => {
+    await updateDoc(doc(db, "verifications", verificationData.id), {
+      status: "rejected",
+    });
+    await updateDoc(doc(db, "users", verificationData.id), {
+      verified: false,
+    });
+    alert("Verification Rejected!");
+    setVerificationData(null);
   };
 
   return (
     <div className="p-6">
       <h2 className="text-xl font-bold mb-4">🔐 Admin Panel</h2>
-      <ul className="mb-4">
+      <ul className="mb-4 max-h-[300px] overflow-y-auto">
         {users.map(user => (
           <li
             key={user.id}
-            onClick={() => setSelected(user)}
+            onClick={() => handleUserClick(user)}
             className="cursor-pointer hover:bg-gray-100 p-2 border-b"
           >
             {user.name || user.email} ({user.id})
@@ -58,13 +105,15 @@ export default function AdminPanel() {
       {selected && (
         <div className="bg-white p-4 rounded shadow w-full max-w-md">
           <h3 className="text-lg font-semibold mb-2">Manage: {selected.name || selected.email}</h3>
+
           <input
             className="border p-2 w-full mb-2"
             type="number"
             placeholder="Add Coins"
             value={coins}
-            onChange={e => setCoins(parseInt(e.target.value))}
+            onChange={e => setCoins(parseInt(e.target.value) || 0)}
           />
+
           <label className="flex items-center mb-2">
             <input
               type="checkbox"
@@ -74,12 +123,44 @@ export default function AdminPanel() {
             />
             Set as Premium
           </label>
+
           <button
-            className="bg-blue-500 text-white px-4 py-2 rounded"
+            className="bg-blue-500 text-white px-4 py-2 rounded mr-2"
             onClick={updateUser}
           >
             ✅ Update User
           </button>
+
+          {verificationData && (
+            <div className="mt-6 border-t pt-4">
+              <h4 className="text-md font-semibold mb-2">Verification</h4>
+              <p>Status: <strong>{verificationData.status}</strong></p>
+              <div className="flex gap-4 my-2">
+                <div>
+                  <p className="text-sm">ID Photo:</p>
+                  <img src={verificationData.idURL} alt="ID" className="w-32 rounded border" />
+                </div>
+                <div>
+                  <p className="text-sm">Selfie:</p>
+                  <img src={verificationData.selfieURL} alt="Selfie" className="w-32 rounded border" />
+                </div>
+              </div>
+              <div className="flex gap-4">
+                <button
+                  className="bg-green-500 text-white px-3 py-1 rounded"
+                  onClick={approveVerification}
+                >
+                  ✅ Approve
+                </button>
+                <button
+                  className="bg-red-500 text-white px-3 py-1 rounded"
+                  onClick={rejectVerification}
+                >
+                  ❌ Reject
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>
