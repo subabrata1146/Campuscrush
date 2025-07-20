@@ -1,19 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { db, auth, storage } from '../firebase/firebaseConfig';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 import { doc, setDoc } from 'firebase/firestore';
 import { useNavigate } from 'react-router-dom';
-import { checkPremiumStatus } from '../utils/checkPremium'; // ✅ Import premium check
+import { checkPremiumStatus } from '../utils/checkPremium';
 
 export default function Profile() {
   const [name, setName] = useState('');
   const [gender, setGender] = useState('');
   const [lookingFor, setLookingFor] = useState('');
   const [photo, setPhoto] = useState(null);
-  const [isPremium, setIsPremium] = useState(false); // ✅ Premium state
+  const [isPremium, setIsPremium] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(null);
   const navigate = useNavigate();
 
-  // ✅ Check premium on load
   useEffect(() => {
     const fetchPremium = async () => {
       const user = auth.currentUser;
@@ -39,21 +39,34 @@ export default function Profile() {
       }
 
       const storageRef = ref(storage, `profilePics/${user.uid}`);
-      await uploadBytes(storageRef, photo);
-      const photoURL = await getDownloadURL(storageRef);
+      const uploadTask = uploadBytesResumable(storageRef, photo);
 
-      await setDoc(doc(db, 'users', user.uid), {
-        uid: user.uid,
-        name,
-        gender,
-        lookingFor,
-        photoURL,
-        email: user.email,
-        createdAt: new Date()
-      });
+      uploadTask.on(
+        'state_changed',
+        (snapshot) => {
+          const progress = Math.round((snapshot.bytesTransferred / snapshot.totalBytes) * 100);
+          setUploadProgress(progress);
+        },
+        (error) => {
+          console.error("Upload failed:", error);
+          alert("Error uploading photo. If you're seeing CORS errors, set Firebase Storage CORS.");
+        },
+        async () => {
+          const photoURL = await getDownloadURL(uploadTask.snapshot.ref);
+          await setDoc(doc(db, 'users', user.uid), {
+            uid: user.uid,
+            name,
+            gender,
+            lookingFor,
+            photoURL,
+            email: user.email,
+            createdAt: new Date()
+          });
 
-      alert("Profile saved successfully!");
-      navigate('/'); // redirect to swipe page
+          alert("Profile saved successfully!");
+          navigate('/');
+        }
+      );
     } catch (error) {
       console.error(error);
       alert("Error saving profile.");
@@ -64,7 +77,6 @@ export default function Profile() {
     <div className="flex flex-col items-center justify-center min-h-screen p-4 bg-gray-100">
       <h2 className="text-2xl font-semibold mb-1">Complete Your Profile</h2>
 
-      {/* ✅ Show Premium Badge */}
       {isPremium && (
         <div className="text-yellow-500 font-bold mt-1">💎 Premium Member</div>
       )}
@@ -104,6 +116,12 @@ export default function Profile() {
         accept="image/*"
         onChange={e => setPhoto(e.target.files[0])}
       />
+
+      {uploadProgress !== null && (
+        <div className="mb-3 text-sm text-gray-600">
+          Uploading photo: {uploadProgress}%
+        </div>
+      )}
 
       <button
         onClick={handleSubmit}
