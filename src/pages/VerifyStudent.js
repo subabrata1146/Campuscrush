@@ -9,7 +9,7 @@ export default function VerifyStudent() {
   const [uploading, setUploading] = useState(false);
   const navigate = useNavigate();
 
-  // 🔁 REPLACE THESE WITH YOUR CLOUDINARY DETAILS
+  // Cloudinary details
   const CLOUD_NAME = 'dx4knny3g';
   const UPLOAD_PRESET = 'campuscrush_unsigned';
 
@@ -19,17 +19,17 @@ export default function VerifyStudent() {
     formData.append('upload_preset', UPLOAD_PRESET);
     formData.append('cloud_name', CLOUD_NAME);
 
-   const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`, {
-    method: 'POST',
-    body: formData,
-});
+    const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`, {
+      method: 'POST',
+      body: formData,
+    });
 
     const data = await res.json();
     return data.secure_url;
   };
 
   const handleSubmit = async () => {
-    const user = auth.currentUser;
+    const user = auth.currentUser ;
 
     if (!user || !idCard || !selfie) {
       alert("Please upload both ID card and selfie.");
@@ -62,7 +62,7 @@ export default function VerifyStudent() {
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 p-6">
-      <h2 className="text-2xl font-semibold mb-2"> Student Verification</h2>
+      <h2 className="text-2xl font-semibold mb-2">Student Verification</h2>
       <p className="text-sm text-gray-500 mb-4">Upload your student ID and a selfie for admin review</p>
 
       <div className="w-full max-w-xs">
@@ -82,13 +82,13 @@ export default function VerifyStudent() {
           className="mb-6 block w-full"
         />
 
-       <button
-    onClick={handleSubmit}
-    disabled={uploading}
-    className={`w-full px-4 py-2 text-white rounded ${uploading ? 'bg-gray-400' : 'bg-pink-500 hover:bg-pink-600'}`}
->
-    {uploading ? 'Submitting...' : 'Submit for Verification'}
-</button>
+        <button
+          onClick={handleSubmit}
+          disabled={uploading}
+          className={`w-full px-4 py-2 text-white rounded ${uploading ? 'bg-gray-400' : 'bg-pink-500 hover:bg-pink-600'}`}
+        >
+          {uploading ? 'Submitting...' : 'Submit for Verification'}
+        </button>
       </div>
     </div>
   );
