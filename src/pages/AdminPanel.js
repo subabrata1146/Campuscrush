@@ -35,7 +35,7 @@ export default function AdminPanel() {
     }
   };
 
-  const handleUserClick = (user) => { // Fixed function name
+  const handleUserClick = (user) => { // Fixed function 
     setSelected(user);
     fetchVerification(user.id);
     setCoins(0);
