@@ -1,14 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { auth, db } from '../firebase/firebaseConfig';
-import { ref, set, onValue } from 'firebase/database';
+import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { useNavigate } from 'react-router-dom';
 
 export default function VerifyStudent() {
   const [idCard, setIdCard] = useState(null);
   const [selfie, setSelfie] = useState(null);
   const [uploading, setUploading] = useState(false);
-  const [status, setStatus] = useState(null);
-  const [submittedAt, setSubmittedAt] = useState(null);
   const navigate = useNavigate();
 
   // 🔁 REPLACE THESE WITH YOUR CLOUDINARY DETAILS
@@ -21,7 +19,7 @@ export default function VerifyStudent() {
     formData.append('upload_preset', UPLOAD_PRESET);
     formData.append('cloud_name', CLOUD_NAME);
 
-    const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`, {
+    const res = await fetch(https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload, {
       method: 'POST',
       body: formData,
     });
@@ -30,29 +28,11 @@ export default function VerifyStudent() {
     return data.secure_url;
   };
 
-  // Check verification status on page load
-  useEffect(() => {
-    const user = auth.currentUser;
-    if (!user) return;
-
-    const verifyRef = ref(db, 'verifications/' + user.uid);
-    onValue(verifyRef, (snapshot) => {
-      const data = snapshot.val();
-      if (data) {
-        if (data.status === 'approved') {
-          navigate('/quiz'); // redirect to CompatibilityQuiz.js
-        } else {
-          setStatus(data.status);
-          setSubmittedAt(data.submittedAt);
-        }
-      }
-    });
-  }, []);
-
   const handleSubmit = async () => {
     const user = auth.currentUser;
+
     if (!user || !idCard || !selfie) {
-      alert('Please upload both ID card and selfie.');
+      alert("Please upload both ID card and selfie.");
       return;
     }
 
@@ -62,20 +42,19 @@ export default function VerifyStudent() {
       const idCardURL = await uploadToCloudinary(idCard);
       const selfieURL = await uploadToCloudinary(selfie);
 
-      const submittedAt = Date.now();
-
-      await set(ref(db, 'verifications/' + user.uid), {
+      await setDoc(doc(db, 'verifications', user.uid), {
         uid: user.uid,
         idCardURL,
         selfieURL,
         status: 'pending',
-        submittedAt,
+        submittedAt: serverTimestamp()
       });
 
-      alert('Verification submitted successfully. Await admin approval.');
+      alert("Verification submitted successfully. Await admin approval.");
+      navigate('/');
     } catch (err) {
       console.error('Upload Error:', err);
-      alert('Failed to upload. Please try again.');
+      alert("Failed to upload. Please try again.");
     } finally {
       setUploading(false);
     }
@@ -83,19 +62,15 @@ export default function VerifyStudent() {
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 p-6">
-      <h2 className="text-2xl font-semibold mb-2">Student Verification</h2>
-      <p className="text-sm text-gray-500 mb-4">
-        Upload your student ID and a selfie for admin review
-      </p>
+      <h2 className="text-2xl font-semibold mb-2"> Student Verification</h2>
+      <p className="text-sm text-gray-500 mb-4">Upload your student ID and a selfie for admin review</p>
 
       <div className="w-full max-w-xs">
-        <label className="block text-sm font-medium text-gray-600 mb-1">
-          Student ID Card
-        </label>
+        <label className="block text-sm font-medium text-gray-600 mb-1">Student ID Card</label>
         <input
           type="file"
           accept="image/*"
-          onChange={(e) => setIdCard(e.target.files[0])}
+          onChange={e => setIdCard(e.target.files[0])}
           className="mb-4 block w-full"
         />
 
@@ -103,26 +78,17 @@ export default function VerifyStudent() {
         <input
           type="file"
           accept="image/*"
-          onChange={(e) => setSelfie(e.target.files[0])}
+          onChange={e => setSelfie(e.target.files[0])}
           className="mb-6 block w-full"
         />
 
         <button
           onClick={handleSubmit}
           disabled={uploading}
-          className={`w-full px-4 py-2 text-white rounded ${
-            uploading ? 'bg-gray-400' : 'bg-pink-500 hover:bg-pink-600'
-          }`}
+          className={w-full px-4 py-2 text-white rounded ${uploading ? 'bg-gray-400' : 'bg-pink-500 hover:bg-pink-600'}}
         >
           {uploading ? 'Submitting...' : 'Submit for Verification'}
         </button>
-
-        {status === 'pending' && submittedAt && (
-          <div className="mt-4 text-sm text-yellow-600">
-            Your documents were submitted on{' '}
-            <b>{new Date(submittedAt).toLocaleString()}</b>. Please wait for admin approval.
-          </div>
-        )}
       </div>
     </div>
   );
