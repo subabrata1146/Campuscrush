@@ -35,7 +35,7 @@ export default function AdminPanel() {
     }
   };
 
-  const handleUser Click = (user) => { // Fixed function name
+  const handleUserClick = (user) => { // Fixed function 
     setSelected(user);
     fetchVerification(user.id);
     setCoins(0);
@@ -104,7 +104,7 @@ export default function AdminPanel() {
         {users.map(user => (
           <li
             key={user.id}
-            onClick={() => handleUser Click(user)} // Fixed function name
+            onClick={() => handleUserClick(user)} // Fixed function name
             className="cursor-pointer hover:bg-gray-100 p-2 border-b"
           >
             {user.name || user.email} ({user.id})
@@ -136,7 +136,7 @@ export default function AdminPanel() {
 
           <button
             className="bg-blue-500 text-white px-4 py-2 rounded mr-2"
-            onClick={updateUser }
+            onClick={updateUser}
           >
             ✅ Update User
           </button>
