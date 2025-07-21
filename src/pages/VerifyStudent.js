@@ -82,13 +82,13 @@ export default function VerifyStudent() {
           className="mb-6 block w-full"
         />
 
-        <button
-          onClick={handleSubmit}
-          disabled={uploading}
-          className={w-full px-4 py-2 text-white rounded ${uploading ? 'bg-gray-400' : 'bg-pink-500 hover:bg-pink-600'}}
-        >
-          {uploading ? 'Submitting...' : 'Submit for Verification'}
-        </button>
+       <button
+    onClick={handleSubmit}
+    disabled={uploading}
+    className={`w-full px-4 py-2 text-white rounded ${uploading ? 'bg-gray-400' : 'bg-pink-500 hover:bg-pink-600'}`}
+>
+    {uploading ? 'Submitting...' : 'Submit for Verification'}
+</button>
       </div>
     </div>
   );
