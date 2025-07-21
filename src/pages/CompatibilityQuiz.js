@@ -28,6 +28,7 @@ const questions = [
 
 export default function CompatibilityQuiz() {
   const [answers, setAnswers] = useState(Array(questions.length).fill(""));
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
   const handleAnswerChange = (index, value) => {
@@ -36,33 +37,38 @@ export default function CompatibilityQuiz() {
     setAnswers(updated);
   };
 
- const handleSubmit = async () => {
-  const user = auth.currentUser;
-  if (!user) return alert("Please login first");
+  const handleSubmit = async () => {
+    const user = auth.currentUser ;
+    if (!user) return alert("Please login first");
 
-  if (answers.includes("")) return alert("Answer all questions");
+    if (answers.includes("")) return alert("Please answer all questions before submitting.");
 
-  const userRef = doc(db, 'users', user.uid);
-  const quizRef = doc(db, 'quizAnswers', user.uid);
+    const userRef = doc(db, 'users', user.uid);
+    const quizRef = doc(db, 'quizAnswers', user.uid);
 
-  try {
-    // Save quiz answers
-    await setDoc(quizRef, {
-      uid: user.uid,
-      answers,
-      timestamp: new Date()
-    });
+    try {
+      setLoading(true); // Set loading state to true
 
-    // Update user's Firestore profile with quiz completion
-    await setDoc(userRef, { hasCompletedQuiz: true }, { merge: true });
+      // Save quiz answers
+      await setDoc(quizRef, {
+        uid: user.uid,
+        answers,
+        timestamp: new Date()
+      });
 
-    alert("Quiz submitted successfully!");
-    navigate('/swipe');
-  } catch (error) {
-    console.error("Error submitting quiz: ", error);
-    alert("Failed to submit quiz. Please try again.");
-  }
-};
+      // Update user's Firestore profile with quiz completion
+      await setDoc(userRef, { hasCompletedQuiz: true }, { merge: true });
+
+      alert("Quiz submitted successfully!");
+      navigate('/swipe');
+    } catch (error) {
+      console.error("Error submitting quiz: ", error);
+      alert("Failed to submit quiz. Please try again.");
+    } finally {
+      setLoading(false); // Reset loading state
+    }
+  };
+
   return (
     <div className="p-6 max-w-xl mx-auto bg-white shadow rounded mt-8">
       <h2 className="text-2xl font-bold text-center mb-6">💡 Compatibility Quiz</h2>
@@ -86,9 +92,10 @@ export default function CompatibilityQuiz() {
       ))}
       <button
         onClick={handleSubmit}
-        className="bg-pink-500 hover:bg-pink-600 text-white px-4 py-2 rounded w-full"
+        disabled={loading} // Disable button while loading
+        className={`bg-pink-500 hover:bg-pink-600 text-white px-4 py-2 rounded w-full ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
       >
-        Submit Quiz
+        {loading ? 'Submitting...' : 'Submit Quiz'}
       </button>
     </div>
   );
