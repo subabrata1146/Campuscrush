@@ -35,14 +35,14 @@ export default function AdminPanel() {
     }
   };
 
-  const handleUserClick = (user) => {
+  const handleUser Click = (user) => {
     setSelected(user);
     fetchVerification(user.id);
     setCoins(0);
     setMakePremium(user.isPremium || false);
   };
 
-  const updateUser = async () => {
+  const updateUser  = async () => {
     if (!selected) return;
 
     const userRef = doc(db, 'users', selected.id);
@@ -58,7 +58,7 @@ export default function AdminPanel() {
       isPremium: makePremium,
     });
 
-    alert("User updated!");
+    alert("User  updated!");
     setSelected(null);
     setCoins(0);
     setMakePremium(false);
@@ -66,25 +66,35 @@ export default function AdminPanel() {
   };
 
   const approveVerification = async () => {
-    await updateDoc(doc(db, "verifications", verificationData.id), {
-      status: "approved",
-    });
-    await updateDoc(doc(db, "users", verificationData.id), {
-      verified: true,
-    });
-    alert("Verification Approved!");
-    setVerificationData(null);
+    try {
+      await updateDoc(doc(db, "verifications", verificationData.id), {
+        status: "approved",
+      });
+      await updateDoc(doc(db, "users", verificationData.id), {
+        verified: true,
+      });
+      alert("Verification Approved!");
+      setVerificationData(null);
+    } catch (error) {
+      console.error("Error approving verification: ", error);
+      alert("Failed to approve verification. Please try again.");
+    }
   };
 
   const rejectVerification = async () => {
-    await updateDoc(doc(db, "verifications", verificationData.id), {
-      status: "rejected",
-    });
-    await updateDoc(doc(db, "users", verificationData.id), {
-      verified: false,
-    });
-    alert("Verification Rejected!");
-    setVerificationData(null);
+    try {
+      await updateDoc(doc(db, "verifications", verificationData.id), {
+        status: "rejected",
+      });
+      await updateDoc(doc(db, "users", verificationData.id), {
+        verified: false,
+      });
+      alert("Verification Rejected!");
+      setVerificationData(null);
+    } catch (error) {
+      console.error("Error rejecting verification: ", error);
+      alert("Failed to reject verification. Please try again.");
+    }
   };
 
   return (
@@ -94,7 +104,7 @@ export default function AdminPanel() {
         {users.map(user => (
           <li
             key={user.id}
-            onClick={() => handleUserClick(user)}
+            onClick={() => handleUser Click(user)}
             className="cursor-pointer hover:bg-gray-100 p-2 border-b"
           >
             {user.name || user.email} ({user.id})
@@ -126,7 +136,7 @@ export default function AdminPanel() {
 
           <button
             className="bg-blue-500 text-white px-4 py-2 rounded mr-2"
-            onClick={updateUser}
+            onClick={updateUser }
           >
             ✅ Update User
           </button>
