@@ -62,7 +62,7 @@ export default function VerifyStudent() {
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gray-50 p-6">
-      <h2 className="text-2xl font-semibold mb-2">📷 Student Verification</h2>
+      <h2 className="text-2xl font-semibold mb-2"> Student Verification</h2>
       <p className="text-sm text-gray-500 mb-4">Upload your student ID and a selfie for admin review</p>
 
       <div className="w-full max-w-xs">
