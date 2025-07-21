@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { auth, db } from '../firebase/firebaseConfig';
-import { ref, set, onValue } from 'firebase/database';
+import { ref, set, onValue } from 'firebase/firestore';
 import { useNavigate } from 'react-router-dom';
 
 export default function VerifyStudent() {
