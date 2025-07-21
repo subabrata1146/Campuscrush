@@ -10,7 +10,7 @@ export default function VerifyStudent() {
   const [status, setStatus] = useState(null);
   const [submittedAt, setSubmittedAt] = useState(null);
   const navigate = useNavigate();
-
+export const db = getFirestore(app);
   // 🔁 REPLACE THESE WITH YOUR CLOUDINARY DETAILS
   const CLOUD_NAME = 'dx4knny3g';
   const UPLOAD_PRESET = 'campuscrush_unsigned';
