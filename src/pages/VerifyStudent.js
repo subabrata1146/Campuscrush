@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { auth, db } from '../firebase/firebaseConfig';
-import { ref, set, onValue } from 'firebase/firestore';
+import { ref, set, onValue } from 'firebase/storage';
 import { useNavigate } from 'react-router-dom';
 
 export default function VerifyStudent() {
@@ -10,7 +10,7 @@ export default function VerifyStudent() {
   const [status, setStatus] = useState(null);
   const [submittedAt, setSubmittedAt] = useState(null);
   const navigate = useNavigate();
-export const db = getFirestore(app);
+
   // 🔁 REPLACE THESE WITH YOUR CLOUDINARY DETAILS
   const CLOUD_NAME = 'dx4knny3g';
   const UPLOAD_PRESET = 'campuscrush_unsigned';
