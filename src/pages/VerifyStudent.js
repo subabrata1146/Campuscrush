@@ -51,7 +51,7 @@ export default function VerifyStudent() {
       });
 
       alert("Verification submitted successfully. Await admin approval.");
-      navigate('/');
+      navigate('/compatibility-quiz');
     } catch (err) {
       console.error('Upload Error:', err);
       alert("Failed to upload. Please try again.");
