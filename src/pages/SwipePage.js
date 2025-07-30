@@ -30,11 +30,12 @@ export default function SwipePage() {
 
       const currentUserDoc = await getDoc(doc(db, 'users', user.uid));
       const data = currentUserDoc.data();
- if (!data?.verification?.verified) {
+if (!data?.verification || data.verification.verified !== true) {
   alert("Please complete ID and selfie verification to use swipe features.");
   navigate('/verify');
   return;
 }
+
 setCurrentUserData(data);
 
 
