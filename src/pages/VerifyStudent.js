@@ -1,17 +1,40 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { auth, db } from '../firebase/firebaseConfig';
-import { doc, setDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, setDoc, updateDoc, getDoc, serverTimestamp } from 'firebase/firestore';
 import { useNavigate } from 'react-router-dom';
 
 export default function VerifyStudent() {
   const [idCard, setIdCard] = useState(null);
   const [selfie, setSelfie] = useState(null);
   const [uploading, setUploading] = useState(false);
+  const [userData, setUserData] = useState(null);
+  const [statusMessage, setStatusMessage] = useState('');
   const navigate = useNavigate();
 
-  // Cloudinary details
   const CLOUD_NAME = 'dx4knny3g';
   const UPLOAD_PRESET = 'campuscrush_unsigned';
+
+  // Fetch user data on mount
+  useEffect(() => {
+    const fetchUserData = async () => {
+      const user = auth.currentUser;
+      if (!user) return;
+
+      const userDoc = await getDoc(doc(db, 'users', user.uid));
+      if (userDoc.exists()) {
+        const data = userDoc.data();
+        setUserData(data);
+
+        if (data.verified) {
+          navigate('/swipe'); // already verified
+        } else if (data.verification?.idCardURL && data.verification?.selfieURL) {
+          setStatusMessage("Documents already submitted. Waiting for admin approval.");
+        }
+      }
+    };
+
+    fetchUserData();
+  }, [navigate]);
 
   const uploadToCloudinary = async (file) => {
     const formData = new FormData();
@@ -30,7 +53,6 @@ export default function VerifyStudent() {
 
   const handleSubmit = async () => {
     const user = auth.currentUser;
-
     if (!user || !idCard || !selfie) {
       alert("Please upload both ID card and selfie.");
       return;
@@ -42,7 +64,6 @@ export default function VerifyStudent() {
       const idCardURL = await uploadToCloudinary(idCard);
       const selfieURL = await uploadToCloudinary(selfie);
 
-      // Store in verifications/{uid}
       await setDoc(doc(db, 'verifications', user.uid), {
         uid: user.uid,
         idCardURL,
@@ -51,7 +72,6 @@ export default function VerifyStudent() {
         submittedAt: serverTimestamp()
       });
 
-      // Also update users/{uid}/verification, but do NOT reset 'verified'
       await updateDoc(doc(db, 'users', user.uid), {
         'verification.idCardURL': idCardURL,
         'verification.selfieURL': selfieURL,
@@ -73,31 +93,35 @@ export default function VerifyStudent() {
       <h2 className="text-2xl font-semibold mb-2">Student Verification</h2>
       <p className="text-sm text-gray-500 mb-4">Upload your student ID and a selfie for admin review</p>
 
-      <div className="w-full max-w-xs">
-        <label className="block text-sm font-medium text-gray-600 mb-1">Student ID Card</label>
-        <input
-          type="file"
-          accept="image/*"
-          onChange={e => setIdCard(e.target.files[0])}
-          className="mb-4 block w-full"
-        />
+      {statusMessage ? (
+        <p className="text-yellow-600 font-medium">{statusMessage}</p>
+      ) : (
+        <div className="w-full max-w-xs">
+          <label className="block text-sm font-medium text-gray-600 mb-1">Student ID Card</label>
+          <input
+            type="file"
+            accept="image/*"
+            onChange={e => setIdCard(e.target.files[0])}
+            className="mb-4 block w-full"
+          />
 
-        <label className="block text-sm font-medium text-gray-600 mb-1">Selfie</label>
-        <input
-          type="file"
-          accept="image/*"
-          onChange={e => setSelfie(e.target.files[0])}
-          className="mb-6 block w-full"
-        />
+          <label className="block text-sm font-medium text-gray-600 mb-1">Selfie</label>
+          <input
+            type="file"
+            accept="image/*"
+            onChange={e => setSelfie(e.target.files[0])}
+            className="mb-6 block w-full"
+          />
 
-        <button
-          onClick={handleSubmit}
-          disabled={uploading}
-          className={`w-full px-4 py-2 text-white rounded ${uploading ? 'bg-gray-400' : 'bg-pink-500 hover:bg-pink-600'}`}
-        >
-          {uploading ? 'Submitting...' : 'Submit for Verification'}
-        </button>
-      </div>
+          <button
+            onClick={handleSubmit}
+            disabled={uploading}
+            className={`w-full px-4 py-2 text-white rounded ${uploading ? 'bg-gray-400' : 'bg-pink-500 hover:bg-pink-600'}`}
+          >
+            {uploading ? 'Submitting...' : 'Submit for Verification'}
+          </button>
+        </div>
+      )}
     </div>
   );
 }
