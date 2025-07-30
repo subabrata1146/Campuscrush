@@ -83,7 +83,7 @@ export default function Profile() {
       });
 
       alert("Profile saved successfully!");
-      navigate('/');
+      navigate('/verify');
     } catch (error) {
       console.error(error);
       alert("Error saving profile or uploading image.");
