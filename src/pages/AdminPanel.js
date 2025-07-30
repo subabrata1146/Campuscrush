@@ -64,22 +64,31 @@ export default function AdminPanel() {
     setMakePremium(false);
     setVerificationData(null);
   };
-
-  const approveVerification = async () => {
-    try {
-      await updateDoc(doc(db, "verifications", verificationData.id), {
+const approveVerification = async () => {
+  try {
+    // Update verification status
+    await updateDoc(doc(db, "verifications", userId), {
+      status: "approved",
+    });
+    
+    // Update user document
+    await updateDoc(doc(db, "users", userId), {
+      verified: true,
+      verification: {
         status: "approved",
-      });
-      await updateDoc(doc(db, "users", verificationData.id), {
-        verified: true,
-      });
-      alert("Verification Approved!");
-      setVerificationData(null);
-    } catch (error) {
-      console.error("Error approving verification: ", error);
-      alert("Failed to approve verification. Please try again.");
-    }
-  };
+        approvedAt: serverTimestamp()
+      }
+    });
+    
+    alert("User approved successfully!");
+    // Refresh the user list
+    fetchUsers();
+  } catch (error) {
+    console.error("Approval error:", error);
+    alert("Approval failed. Please try again.");
+  }
+};
+
 
   const rejectVerification = async () => {
     try {
