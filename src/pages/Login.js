@@ -13,7 +13,7 @@ export default function Login() {
     try {
       await signInWithEmailAndPassword(auth, email, password);
       alert("Logged in successfully");
-      navigate('/Verify');
+      navigate('/verify');
     } catch (error) {
       alert(error.message);
     }
@@ -23,7 +23,7 @@ export default function Login() {
     try {
       await signInWithPopup(auth, provider);
       alert("Google Login successful");
-      navigate('/');
+      navigate('/verify');
     } catch (error) {
       alert(error.message);
     }
