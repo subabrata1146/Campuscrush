@@ -13,7 +13,7 @@ export default function Login() {
     try {
       await signInWithEmailAndPassword(auth, email, password);
       alert("Logged in successfully");
-      navigate('/VerifyStudent');
+      navigate('/Verify');
     } catch (error) {
       alert(error.message);
     }
