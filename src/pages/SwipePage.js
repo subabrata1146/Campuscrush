@@ -51,15 +51,17 @@ export default function Swipe() {
       setUserData(data);
 
       // Load potential matches
-      const allUsersSnapshot = await getDocs(collection(db, 'users'));
-      const allUsers = allUsersSnapshot.docs
-        .map(doc => ({ id: doc.id, ...doc.data() }))
-        .filter(
-          other =>
-            other.id !== user.uid && // not self
-            other.gender === data.preference && // matches preference
-            other.preference === data.gender // reciprocal preference
-        );
+    const allUsers = allUsersSnapshot.docs
+  .map(doc => ({ id: doc.id, ...doc.data() }))
+  .filter(other =>
+    other.id !== user.uid &&                         // Not self
+    other.gender === data.preference &&              // Matches user's preference
+    other.preference === data.gender &&              // Reciprocal preference
+    other.verified === true &&                       // Only verified users
+    other.photoURL && other.bio &&                   // Must have profile info
+    other.quizAnswers                                // Must have completed quiz
+  );
+
 
       setPotentialMatches(allUsers);
       setIsLoading(false);
