@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { auth, db } from '../firebase/firebaseConfig';
-import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, setDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { useNavigate } from 'react-router-dom';
 
 export default function VerifyStudent() {
@@ -29,7 +29,7 @@ export default function VerifyStudent() {
   };
 
   const handleSubmit = async () => {
-    const user = auth.currentUser ;
+    const user = auth.currentUser;
 
     if (!user || !idCard || !selfie) {
       alert("Please upload both ID card and selfie.");
@@ -42,12 +42,20 @@ export default function VerifyStudent() {
       const idCardURL = await uploadToCloudinary(idCard);
       const selfieURL = await uploadToCloudinary(selfie);
 
+      // Store in verifications/{uid}
       await setDoc(doc(db, 'verifications', user.uid), {
         uid: user.uid,
         idCardURL,
         selfieURL,
         status: 'pending',
         submittedAt: serverTimestamp()
+      });
+
+      // Also update users/{uid}/verification, but do NOT reset 'verified'
+      await updateDoc(doc(db, 'users', user.uid), {
+        'verification.idCardURL': idCardURL,
+        'verification.selfieURL': selfieURL,
+        'verification.submittedAt': serverTimestamp()
       });
 
       alert("Verification submitted successfully. Await admin approval.");
