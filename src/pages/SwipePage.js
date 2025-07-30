@@ -28,10 +28,11 @@ export default function Swipe() {
   }, [auth, navigate]);
 
   // Fetch user profile and matches once user is set
-  useEffect(() => {
-    const fetchUserData = async () => {
-      if (!user) return;
+ useEffect(() => {
+  const fetchUserData = async () => {
+    if (!user) return;
 
+    try {
       const userDocRef = doc(db, 'users', user.uid);
       const userSnap = await getDoc(userDocRef);
 
@@ -50,25 +51,32 @@ export default function Swipe() {
 
       setUserData(data);
 
-      // Load potential matches
-    const allUsers = allUsersSnapshot.docs
-  .map(doc => ({ id: doc.id, ...doc.data() }))
-  .filter(other =>
-    other.id !== user.uid &&                         // Not self
-    other.gender === data.preference &&              // Matches user's preference
-    other.preference === data.gender &&              // Reciprocal preference
-    other.verified === true &&                       // Only verified users
-    other.photoURL && other.bio &&                   // Must have profile info
-    other.quizAnswers                                // Must have completed quiz
-  );
+      // Fetch all users from Firestore
+      const allUsersSnapshot = await getDocs(collection(db, 'users'));
 
+      // Filter based on match logic
+      const allUsers = allUsersSnapshot.docs
+        .map(doc => ({ id: doc.id, ...doc.data() }))
+        .filter(other =>
+          other.id !== user.uid &&                         // Not self
+          other.gender === data.preference &&              // Matches user's preference
+          other.preference === data.gender &&              // Reciprocal preference
+          other.verified === true &&                       // Only verified users
+          other.photoURL && other.bio &&                   // Must have profile info
+          other.quizAnswers                                // Must have completed quiz
+        );
 
       setPotentialMatches(allUsers);
       setIsLoading(false);
-    };
+    } catch (error) {
+      console.error('Error fetching user data:', error);
+      setIsLoading(false);
+    }
+  };
 
-    fetchUserData();
-  }, [user, navigate]);
+  fetchUserData();
+}, [user, navigate]);
+
 
   const handleSwipe = (direction) => {
     if (direction === 'like') {
